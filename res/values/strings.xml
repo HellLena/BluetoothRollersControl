@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">BluetoothRollersControl</string>
+    <string name="app_name">Bluetooth Rollers Control</string>
+    <string name="devices_search">Search for devices</string>
+    <string name="devices_found">Devices found. Choose the device to connect.</string>
+    <string name="type_message">Type a message</string>
+    <string name="send_message">Send message</string>
+    <string name="message_received">Message received</string>
 </resources>
