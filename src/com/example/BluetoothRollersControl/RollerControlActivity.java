@@ -27,6 +27,7 @@ import java.util.UUID;
 public class RollerControlActivity extends Activity {
 
     Button btnOn, btnOff, btnDis, btnColor;
+    TrippleStateButton btnTest;
     SeekBar brightness;
     TextView lumn;
     String address = null;
@@ -53,10 +54,22 @@ public class RollerControlActivity extends Activity {
         btnOff = (Button)findViewById(R.id.button3);
         btnDis = (Button)findViewById(R.id.button4);
         btnColor = (Button)findViewById(R.id.button5);
+        btnTest = (TrippleStateButton)findViewById(R.id.button6);
+        //btnTest.disableAnimation();
         brightness = (SeekBar)findViewById(R.id.seekBar);
         lumn = (TextView)findViewById(R.id.lumn);
 
         //-------------- new ConnectBT().execute(); //Call the class to connect
+
+        btnTest.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                System.out.println(btnTest.getState());
+                test();      //method to turn on
+            }
+        });
 
         //commands to be sent to bluetooth
         btnOn.setOnClickListener(new View.OnClickListener()
@@ -123,6 +136,9 @@ public class RollerControlActivity extends Activity {
         });
     }
 
+    private void test(){
+    }
+
     private void Disconnect()
     {
         if (btSocket!=null) //If the btSocket is busy
@@ -176,18 +192,15 @@ public class RollerControlActivity extends Activity {
     {
         if (btSocket!=null)
         {
-            try
-            {
-                byte b[] = {0x00,0x10,0x00,0x7f,0x00,0x03,0x06,0x7F,0x00,0x00,0x00,0x00,0x00,0x7f,0x2e};
-                b[3] += 0x02;
-                b[7] += 0x80;
-                b[13] += 0x13;
-                btSocket.getOutputStream().write(b);
-            }
-            catch (IOException e)
-            {
-                msg("Error");
-            }
+//            try
+//            {
+//                byte b[] = {};
+//                btSocket.getOutputStream().write(b);
+//            }
+//            catch (IOException e)
+//            {
+//                msg("Error");
+//            }
         }
     }
 
