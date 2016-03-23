@@ -9,7 +9,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import android.bluetooth.BluetoothSocket;
-import android.content.Intent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.SeekBar;
@@ -26,10 +25,10 @@ import java.util.UUID;
 
 public class RollerControlActivity extends Activity {
 
-    Button btnOn, btnOff, btnDis, btnColor;
-    TrippleStateButton btnTest;
-    SeekBar brightness;
-    TextView lumn;
+    TrippleStateButton btnBottomLights, btnHeadLights, btnTailLights;
+    Button btnDisconnect;
+    SeekBar brightnessBar;
+    TextView brightnessValue;
     String address = null;
     private ProgressDialog progress;
     BluetoothAdapter myBluetooth = null;
@@ -50,77 +49,54 @@ public class RollerControlActivity extends Activity {
         setContentView(R.layout.controls);
 
         //call the widgets
-        btnOn = (Button)findViewById(R.id.button2);
-        btnOff = (Button)findViewById(R.id.button3);
-        btnDis = (Button)findViewById(R.id.button4);
-        btnColor = (Button)findViewById(R.id.button5);
-        btnTest = (TrippleStateButton)findViewById(R.id.button6);
-        //btnTest.disableAnimation();
-        brightness = (SeekBar)findViewById(R.id.seekBar);
-        lumn = (TextView)findViewById(R.id.lumn);
+        btnBottomLights = (TrippleStateButton)findViewById(R.id.btnBottomLights);
+        btnBottomLights.disableAnimation(); // disable blinking mode in bottomLights button
+        btnHeadLights = (TrippleStateButton)findViewById(R.id.btnHeadLights);
+        btnTailLights = (TrippleStateButton)findViewById(R.id.btnTailLights);
+        btnDisconnect = (Button)findViewById(R.id.btnDisconnect);
+        brightnessBar = (SeekBar)findViewById(R.id.brightnessBar);
+        brightnessValue = (TextView)findViewById(R.id.brightnessValue);
 
         //-------------- new ConnectBT().execute(); //Call the class to connect
 
-        btnTest.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View v)
-            {
-                System.out.println(btnTest.getState());
-                test();      //method to turn on
-            }
-        });
-
         //commands to be sent to bluetooth
-        btnOn.setOnClickListener(new View.OnClickListener()
+        btnBottomLights.setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View v)
             {
-                turnOnLed();      //method to turn on
+                changeLEDMode(btnBottomLights.getState(), (byte) 0x80);
             }
         });
 
-        btnOff.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v)
-            {
-                turnOffLed();   //method to turn off
-            }
-        });
-
-        btnDis.setOnClickListener(new View.OnClickListener()
+        btnHeadLights.setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View v)
             {
-                Disconnect(); //close connection
+                changeLEDMode(btnHeadLights.getState(), (byte) 0x80);
             }
         });
 
-        btnColor.setOnClickListener(new View.OnClickListener()
+        btnTailLights.setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View v)
             {
-                sendColor(); // test color
+                changeLEDMode(btnTailLights.getState(), (byte) 0x80);
             }
         });
 
-        brightness.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        brightnessBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser==true)
-                {
-                    lumn.setText(String.valueOf(progress));
-                    try
-                    {
-                        btSocket.getOutputStream().write(String.valueOf(progress).getBytes());
-                    }
-                    catch (IOException e)
-                    {
-
-                    }
+                if (fromUser == true) {
+                    brightnessValue.setText(String.valueOf(progress));
+//---------------                    try {
+//                        btSocket.getOutputStream().write(String.valueOf(progress).getBytes());
+//                    } catch (IOException e) {
+//
+// ---------------                   }
                 }
             }
 
@@ -134,12 +110,50 @@ public class RollerControlActivity extends Activity {
 
             }
         });
+
+        btnDisconnect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                disconnect(); //close connection
+            }
+        });
     }
 
-    private void test(){
+    private void changeLEDMode(int state, byte reg_address)
+    {
+        System.out.println(state);
+        byte b[] = {0x00,0x10,0x00,0x00,0x00,0x01,0x02,0x00,0x00,0x00,0x00};
+        b[3] = reg_address;
+        switch(state){
+            case 0: b[8] = 0x00;
+                    break;
+            case 1: b[8] = 0x01;
+                    break;
+            case 2: b[8] = 0x00;   // blinking mode
+                    break;
+            default: b[8] = 0x00;
+                     break;
+        }
+        byte crc[] = hexStringToByteArray(Integer.toHexString(ModRTU_CRC(b, b.length)));
+        if(crc.length > 1) b[9] = crc[1];
+        if(crc.length > 0) b[10] = crc[0];
+
+//        if (btSocket!=null)
+//        {
+//            try
+//            {
+//                byte b[] = {0x00,0x10,0x00,0x7F,0x00,0x01,0x02,0x00,0x01,0x75,-(0x100-0xC0)};
+//                b[3]++;
+//                btSocket.getOutputStream().write(b);
+//            }
+//            catch (IOException e)
+//            {
+//                msg("Error");
+//            }
+//        }
     }
 
-    private void Disconnect()
+    private void disconnect()
     {
         if (btSocket!=null) //If the btSocket is busy
         {
@@ -154,38 +168,35 @@ public class RollerControlActivity extends Activity {
 
     }
 
-    private void turnOffLed()
-    {
-        if (btSocket!=null)
-        {
-            try
-            {
-                byte b[] = {0x00,0x10,0x00,0x7F,0x00,0x01,0x02,0x00,0x00,-(0x100-0xB4),0x00};
-                b[3]++;
-                btSocket.getOutputStream().write(b);
-            }
-            catch (IOException e)
-            {
-                msg("Error");
-            }
+    public static byte[] hexStringToByteArray(String s) {
+        byte[] b = new byte[s.length() / 2];
+        for (int i = 0; i < b.length; i++) {
+            int index = i * 2;
+            int v = Integer.parseInt(s.substring(index, index + 2), 16);
+            b[i] = (byte) v;
         }
+        return b;
     }
 
-    private void turnOnLed()
+    // Compute the MODBUS RTU CRC
+    private static int ModRTU_CRC(byte[] buf, int len)
     {
-        if (btSocket!=null)
-        {
-            try
-            {
-                byte b[] = {0x00,0x10,0x00,0x7F,0x00,0x01,0x02,0x00,0x01,0x75,-(0x100-0xC0)};
-                b[3]++;
-                btSocket.getOutputStream().write(b);
-            }
-            catch (IOException e)
-            {
-                msg("Error");
+        int crc = 0xFFFF;
+
+        for (int pos = 0; pos < len; pos++) {
+            crc ^= (int)buf[pos] & 0xFF;   // XOR byte into least sig. byte of crc
+
+            for (int i = 8; i != 0; i--) {    // Loop over each bit
+                if ((crc & 0x0001) != 0) {      // If the LSB is set
+                    crc >>= 1;                    // Shift right and XOR 0xA001
+                    crc ^= 0xA001;
+                }
+                else                            // Else LSB is not set
+                    crc >>= 1;                    // Just shift right
             }
         }
+        // Note, this number has low and high bytes swapped, so use it accordingly (or swap bytes)
+        return crc;
     }
 
     private void sendColor()
