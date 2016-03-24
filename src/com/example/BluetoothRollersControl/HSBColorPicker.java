@@ -51,7 +51,7 @@ public class HSBColorPicker extends View implements View.OnTouchListener {
 
 
         Paint paint = new Paint();
-        int[] colors = new int[] {Color.RED, Color.GREEN, Color.BLUE};
+        int[] colors = new int[] {Color.RED, Color.YELLOW, Color.GREEN, Color.CYAN, Color.BLUE, Color.MAGENTA, Color.RED};
         float[] positions = null;
         Shader s = new LinearGradient(leftx, topy, rightx, bottomy,colors,positions,Shader.TileMode.MIRROR);
         paint.setShader(s);

@@ -4,6 +4,7 @@ package com.example.BluetoothRollersControl;
  * Created by Stargazer on 07.03.2016.
  */
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,11 +23,10 @@ import android.os.AsyncTask;
 import java.io.IOException;
 import java.util.UUID;
 
-
 public class RollerControlActivity extends Activity {
 
     TrippleStateButton btnBottomLights, btnHeadLights, btnTailLights;
-    Button btnDisconnect;
+    Button btnDisconnect, btnTest;
     SeekBar brightnessBar;
     TextView brightnessValue;
     String address = null;
@@ -42,8 +42,8 @@ public class RollerControlActivity extends Activity {
     {
         super.onCreate(savedInstanceState);
 
-        /*-------------- Intent newint = getIntent();
-        address = newint.getStringExtra(MainActivity.EXTRA_ADDRESS);*/ //receive the address of the bluetooth device
+        Intent newint = getIntent();
+        address = newint.getStringExtra(MainActivity.EXTRA_ADDRESS); //receive the address of the bluetooth device
 
         //view of the ledControl
         setContentView(R.layout.controls);
@@ -54,10 +54,11 @@ public class RollerControlActivity extends Activity {
         btnHeadLights = (TrippleStateButton)findViewById(R.id.btnHeadLights);
         btnTailLights = (TrippleStateButton)findViewById(R.id.btnTailLights);
         btnDisconnect = (Button)findViewById(R.id.btnDisconnect);
+        btnTest = (Button)findViewById(R.id.btnTest);
         brightnessBar = (SeekBar)findViewById(R.id.brightnessBar);
         brightnessValue = (TextView)findViewById(R.id.brightnessValue);
 
-        //-------------- new ConnectBT().execute(); //Call the class to connect
+        new ConnectBT().execute(); //Call the class to connect
 
         //commands to be sent to bluetooth
         btnBottomLights.setOnClickListener(new View.OnClickListener()
@@ -74,7 +75,7 @@ public class RollerControlActivity extends Activity {
             @Override
             public void onClick(View v)
             {
-                changeLEDMode(btnHeadLights.getState(), (byte) 0x80);
+                changeLEDMode(btnHeadLights.getState(), (byte) 0x85);
             }
         });
 
@@ -83,7 +84,7 @@ public class RollerControlActivity extends Activity {
             @Override
             public void onClick(View v)
             {
-                changeLEDMode(btnTailLights.getState(), (byte) 0x80);
+                changeLEDMode(btnTailLights.getState(), (byte) 0x87);
             }
         });
 
@@ -92,11 +93,7 @@ public class RollerControlActivity extends Activity {
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser == true) {
                     brightnessValue.setText(String.valueOf(progress));
-//---------------                    try {
-//                        btSocket.getOutputStream().write(String.valueOf(progress).getBytes());
-//                    } catch (IOException e) {
-//
-// ---------------                   }
+                    sendBrightness(progress);
                 }
             }
 
@@ -117,40 +114,43 @@ public class RollerControlActivity extends Activity {
                 disconnect(); //close connection
             }
         });
+
+        btnTest.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendColor();
+            }
+        });
     }
 
     private void changeLEDMode(int state, byte reg_address)
     {
-        System.out.println(state);
-        byte b[] = {0x00,0x10,0x00,0x00,0x00,0x01,0x02,0x00,0x00,0x00,0x00};
-        b[3] = reg_address;
-        switch(state){
-            case 0: b[8] = 0x00;
-                    break;
-            case 1: b[8] = 0x01;
-                    break;
-            case 2: b[8] = 0x00;   // blinking mode
-                    break;
-            default: b[8] = 0x00;
-                     break;
+        if (btSocket!=null)
+        {
+            try
+            {
+                byte b[] = {0x01,0x10,0x00,0x00,0x00,0x01,0x02,0x00,0x00,0x00,0x00};
+                b[3] = reg_address;
+                switch(state){
+                    case 0: b[8] = 0x00;
+                        break;
+                    case 1: b[8] = 0x01;
+                        break;
+                    case 2: b[8] = 0x02;   // blinking mode
+                        break;
+                    default: b[8] = 0x00;
+                        break;
+                }
+                int crc = ModRTU_CRC(b, b.length - 2);
+                b[9] = (byte)(crc & 0xFF);
+                b[10] = (byte)((crc >> 8) & 0xFF);
+                btSocket.getOutputStream().write(b);
+            }
+            catch (IOException e)
+            {
+                msg("Error");
+            }
         }
-        byte crc[] = hexStringToByteArray(Integer.toHexString(ModRTU_CRC(b, b.length)));
-        if(crc.length > 1) b[9] = crc[1];
-        if(crc.length > 0) b[10] = crc[0];
-
-//        if (btSocket!=null)
-//        {
-//            try
-//            {
-//                byte b[] = {0x00,0x10,0x00,0x7F,0x00,0x01,0x02,0x00,0x01,0x75,-(0x100-0xC0)};
-//                b[3]++;
-//                btSocket.getOutputStream().write(b);
-//            }
-//            catch (IOException e)
-//            {
-//                msg("Error");
-//            }
-//        }
     }
 
     private void disconnect()
@@ -166,16 +166,6 @@ public class RollerControlActivity extends Activity {
         }
         finish(); //return to the first layout
 
-    }
-
-    public static byte[] hexStringToByteArray(String s) {
-        byte[] b = new byte[s.length() / 2];
-        for (int i = 0; i < b.length; i++) {
-            int index = i * 2;
-            int v = Integer.parseInt(s.substring(index, index + 2), 16);
-            b[i] = (byte) v;
-        }
-        return b;
     }
 
     // Compute the MODBUS RTU CRC
@@ -203,22 +193,45 @@ public class RollerControlActivity extends Activity {
     {
         if (btSocket!=null)
         {
-//            try
-//            {
-//                byte b[] = {};
-//                btSocket.getOutputStream().write(b);
-//            }
-//            catch (IOException e)
-//            {
-//                msg("Error");
-//            }
+            try
+            {
+                byte b[] = {0x01,0x10,0x00,(byte)0x81,0x00,0x03,0x06,0x00,0x00,0x00,(byte)0xFF,0x00,0x00,0x00,0x00};
+                int crc = ModRTU_CRC(b, b.length - 2);
+                b[13] = (byte)(crc & 0xFF);
+                b[14] = (byte)((crc >> 8) & 0xFF);
+                btSocket.getOutputStream().write(b);
+            }
+            catch (IOException e)
+            {
+                msg("Error");
+            }
+        }
+    }
+
+    private void sendBrightness(int brightness){
+        if (btSocket!=null)
+        {
+            try
+            {
+                byte b[] = {0x01,0x10,0x00,(byte)0x86,0x00,0x01,0x02,0x00,0x00,0x00,0x00}; // 88
+                b[7] = (byte)((brightness >> 8) & 0xFF);
+                b[8] = (byte)(brightness & 0xFF);
+                int crc = ModRTU_CRC(b, b.length - 2);
+                b[9] = (byte)(crc & 0xFF);
+                b[10] = (byte)((crc >> 8) & 0xFF);
+                btSocket.getOutputStream().write(b);
+            }
+            catch (IOException e)
+            {
+                msg("Error");
+            }
         }
     }
 
     // fast way to call Toast
     private void msg(String s)
     {
-        Toast.makeText(getApplicationContext(),s,Toast.LENGTH_LONG).show();
+        Toast.makeText(getApplicationContext(), s, Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -263,7 +276,7 @@ public class RollerControlActivity extends Activity {
                     myBluetooth = BluetoothAdapter.getDefaultAdapter();//get the mobile bluetooth device
                     BluetoothDevice dispositivo = myBluetooth.getRemoteDevice(address);//connects to the device's address and checks if it's available
                     btSocket = dispositivo.createInsecureRfcommSocketToServiceRecord(myUUID);//create a RFCOMM (SPP) connection
-                    BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
+                    myBluetooth.cancelDiscovery();
                     btSocket.connect();//start connection
                 }
             }

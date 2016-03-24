@@ -42,7 +42,7 @@ public class MainActivity extends Activity
         //if the device has bluetooth
         myBluetooth = BluetoothAdapter.getDefaultAdapter();
 
-        /*-----------if(myBluetooth == null)
+        if(myBluetooth == null)
         {
             //Show a mensag. that the device has no bluetooth adapter
             Toast.makeText(getApplicationContext(), "Bluetooth Device Not Available", Toast.LENGTH_LONG).show();
@@ -55,18 +55,18 @@ public class MainActivity extends Activity
             //Ask to the user turn the bluetooth on
             Intent turnBTon = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(turnBTon,1);
-        }----------*/
+        }
 
         btnPaired.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v)
             {
-                // ---------------- pairedDevicesList();
+                pairedDevicesList();
 
                 // ----------------- TEST UI ------------------------
-                Intent i = new Intent(MainActivity.this, RollerControlActivity.class);
-                i.putExtra(EXTRA_ADDRESS, 0);
-                startActivity(i);
+//                Intent i = new Intent(MainActivity.this, RollerControlActivity.class);
+//                i.putExtra(EXTRA_ADDRESS, 0);
+//                startActivity(i);
                 // --------------------------------------------------
             }
         });
