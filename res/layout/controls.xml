@@ -93,12 +93,19 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/brightnessBar"
-            android:max="255"
+            android:max="100"
             android:progress="1"
             android:indeterminate="false"
             android:layout_below="@+id/brightnessText"
             android:layout_alignParentLeft="true"
             android:layout_alignParentRight="true" />
+
+        <com.example.BluetoothRollersControl.HSBColorPicker
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/colorHSB"
+                android:layout_below="@+id/brightnessBar"
+                android:layout_marginTop="20dp"/>
 
         <Button
             android:layout_width="wrap_content"
