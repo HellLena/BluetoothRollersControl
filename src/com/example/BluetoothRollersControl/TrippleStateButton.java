@@ -13,6 +13,7 @@ import android.widget.Button;
 public class TrippleStateButton extends Button {
 
     private int state = 0;
+    public int backgroundColor = 0xFF4B4B4B;
     private boolean blinkingMode = true;
     private Animation animation;
 
@@ -52,7 +53,7 @@ public class TrippleStateButton extends Button {
             case 0: this.clearAnimation();
                     this.setBackgroundColor(0xFF4B4B4B);
                     break;
-            case 1: this.setBackgroundColor(0xFF3ADF00);
+            case 1: this.setBackgroundColor(backgroundColor);
                     break;
             case 2: this.startAnimation(animation);
                     break;
@@ -75,5 +76,9 @@ public class TrippleStateButton extends Button {
 
     public int getState(){
         return state;
+    }
+
+    public void setState(int state){
+        this.state = state;
     }
 }

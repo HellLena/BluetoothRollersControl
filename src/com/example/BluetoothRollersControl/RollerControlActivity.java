@@ -10,18 +10,21 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import android.bluetooth.BluetoothSocket;
+import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Button;
-import android.widget.SeekBar;
-import android.widget.TextView;
-import android.widget.Toast;
+import android.widget.*;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.os.AsyncTask;
+import com.example.BluetoothRollersControl.HSBColorPicker.CustomTimeScrollPickerView;
+import com.example.BluetoothRollersControl.HSBColorPicker.LoopSlotView;
+import com.example.BluetoothRollersControl.HSBColorPicker.TouchScroll;
 
 import java.io.IOException;
 import java.util.UUID;
+
+import static android.graphics.Color.HSVToColor;
 
 public class RollerControlActivity extends Activity {
 
@@ -29,6 +32,7 @@ public class RollerControlActivity extends Activity {
     Button btnDisconnect, btnTest;
     SeekBar brightnessBar;
     TextView brightnessValue;
+    CustomTimeScrollPickerView colorPicker;
     String address = null;
     private ProgressDialog progress;
     BluetoothAdapter myBluetooth = null;
@@ -51,12 +55,18 @@ public class RollerControlActivity extends Activity {
         //call the widgets
         btnBottomLights = (TrippleStateButton)findViewById(R.id.btnBottomLights);
         btnBottomLights.disableAnimation(); // disable blinking mode in bottomLights button
+        btnBottomLights.backgroundColor = HSVToColor(new float[]{CustomTimeScrollPickerView.getCurrent_hue(),
+                                                                 CustomTimeScrollPickerView.getCurrent_saturation()/(float)100,
+                                                                 CustomTimeScrollPickerView.getCurrent_brightness()/(float)100});
         btnHeadLights = (TrippleStateButton)findViewById(R.id.btnHeadLights);
+        btnHeadLights.backgroundColor = 0xFFFFFFFF;
         btnTailLights = (TrippleStateButton)findViewById(R.id.btnTailLights);
+        btnTailLights.backgroundColor = 0xFFFF0000;
         btnDisconnect = (Button)findViewById(R.id.btnDisconnect);
         btnTest = (Button)findViewById(R.id.btnTest);
         brightnessBar = (SeekBar)findViewById(R.id.brightnessBar);
         brightnessValue = (TextView)findViewById(R.id.brightnessValue);
+        colorPicker = (CustomTimeScrollPickerView) findViewById(R.id.colorPicker);
 
         new ConnectBT().execute(); //Call the class to connect
 
@@ -70,20 +80,16 @@ public class RollerControlActivity extends Activity {
             }
         });
 
-        btnHeadLights.setOnClickListener(new View.OnClickListener()
-        {
+        btnHeadLights.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v)
-            {
+            public void onClick(View v) {
                 changeLEDMode(btnHeadLights.getState(), (byte) 0x85);
             }
         });
 
-        btnTailLights.setOnClickListener(new View.OnClickListener()
-        {
+        btnTailLights.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v)
-            {
+            public void onClick(View v) {
                 changeLEDMode(btnTailLights.getState(), (byte) 0x87);
             }
         });
@@ -119,6 +125,54 @@ public class RollerControlActivity extends Activity {
             @Override
             public void onClick(View v) {
                 sendColor();
+            }
+        });
+
+        LoopSlotView hueSlot = (LoopSlotView) colorPicker.getHueSlot();
+        hueSlot.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                if (motionEvent.getAction() == MotionEvent.ACTION_MOVE) {
+                    btnBottomLights.backgroundColor = HSVToColor(new float[]{CustomTimeScrollPickerView.getCurrent_hue(),
+                            CustomTimeScrollPickerView.getCurrent_saturation() / (float) 100,
+                            CustomTimeScrollPickerView.getCurrent_brightness() / (float) 100});
+                    if (btnBottomLights.getState() == 1 || btnBottomLights.getState() == 2) {
+                        btnBottomLights.setBackgroundColor(btnBottomLights.backgroundColor);
+                    }
+                }
+                return false;
+            }
+        });
+
+        LoopSlotView hueSaturation = (LoopSlotView) colorPicker.getSaturationSlot();
+        hueSaturation.setOnTouchListener(new View.OnTouchListener(){
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                if(motionEvent.getAction() == MotionEvent.ACTION_MOVE){
+                    btnBottomLights.backgroundColor = HSVToColor(new float[]{CustomTimeScrollPickerView.getCurrent_hue(),
+                            CustomTimeScrollPickerView.getCurrent_saturation()/(float)100,
+                            CustomTimeScrollPickerView.getCurrent_brightness()/(float)100});
+                    if(btnBottomLights.getState() == 1 || btnBottomLights.getState() == 2){
+                        btnBottomLights.setBackgroundColor(btnBottomLights.backgroundColor);
+                    }
+                }
+                return false;
+            }
+        });
+
+        LoopSlotView hueBrightness = (LoopSlotView) colorPicker.getBrightnessSlot();
+        hueBrightness.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                if (motionEvent.getAction() == MotionEvent.ACTION_MOVE) {
+                    btnBottomLights.backgroundColor = HSVToColor(new float[]{CustomTimeScrollPickerView.getCurrent_hue(),
+                            CustomTimeScrollPickerView.getCurrent_saturation() / (float) 100,
+                            CustomTimeScrollPickerView.getCurrent_brightness() / (float) 100});
+                    if (btnBottomLights.getState() == 1 || btnBottomLights.getState() == 2) {
+                        btnBottomLights.setBackgroundColor(btnBottomLights.backgroundColor);
+                    }
+                }
+                return false;
             }
         });
     }
@@ -195,7 +249,10 @@ public class RollerControlActivity extends Activity {
         {
             try
             {
-                byte b[] = {0x01,0x10,0x00,(byte)0x81,0x00,0x03,0x06,0x00,0x00,0x00,(byte)0xFF,0x00,0x00,0x00,0x00};
+                byte b[] = {0x01,0x10,0x00,(byte)0x81,0x00,0x03,0x06,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+                b[7] = (byte) (btnBottomLights.backgroundColor & 0xFF);
+                b[9] = (byte) ((btnBottomLights.backgroundColor >> 8) & 0xFF);
+                b[11] = (byte) ((btnBottomLights.backgroundColor >> 16) & 0xFF);
                 int crc = ModRTU_CRC(b, b.length - 2);
                 b[13] = (byte)(crc & 0xFF);
                 b[14] = (byte)((crc >> 8) & 0xFF);

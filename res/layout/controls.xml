@@ -100,12 +100,12 @@
             android:layout_alignParentLeft="true"
             android:layout_alignParentRight="true" />
 
-        <com.example.BluetoothRollersControl.HSBColorPicker
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/colorHSB"
-                android:layout_below="@+id/brightnessBar"
-                android:layout_marginTop="20dp"/>
+        <com.example.BluetoothRollersControl.HSBColorPicker.CustomTimeScrollPickerView
+                android:id="@+id/colorPicker"
+                android:layout_width="match_parent"
+                android:layout_marginTop="10dp"
+                android:layout_height="150dp"
+                android:layout_below="@+id/brightnessBar"/>
 
         <Button
             android:layout_width="wrap_content"
